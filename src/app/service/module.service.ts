@@ -5,7 +5,7 @@ import { Module } from '../models/module.model';
 import { Types } from 'mongoose';
 
 export class ModuleService {
-
+  // Create a new Module
   async createModule(moduleData: IModule) {
     try {
       // Check if the course exists before creating the module
@@ -13,7 +13,7 @@ export class ModuleService {
         throw new Error('Invalid or missing course ID');
       }
 
-      //  check if the module already exists for the given course and moduleNumber
+      // Optionally, check if the module already exists for the given course and moduleNumber
       const existingModule = await Module.findOne({
         course: moduleData.course,
         moduleNumber: moduleData.moduleNumber,
@@ -35,7 +35,7 @@ export class ModuleService {
     }
   }
 
-
+  // Get all modules for a specific course
   async getModulesByCourse(courseId: string | Types.ObjectId) {
     try {
       if (!Types.ObjectId.isValid(courseId)) {
@@ -53,8 +53,16 @@ export class ModuleService {
       throw new Error(`Error fetching modules: ${error.message}`);
     }
   }
-
- 
+  async getAllModules() {
+    try {
+      const modules = await Module.find();
+      return modules;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      throw new Error(`Error fetching modules: ${error.message}`);
+    }
+  }
+  // Get a module by its ID
   async getModuleById(moduleId: string | Types.ObjectId) {
     try {
       if (!Types.ObjectId.isValid(moduleId)) {
@@ -79,13 +87,13 @@ export class ModuleService {
         throw new Error('Invalid module ID');
       }
 
-   
+      // Find the existing module
       const existingModule = await Module.findById(moduleId);
       if (!existingModule) {
         throw new Error('Module not found');
       }
 
-     
+      // Ensure that the provided course ID exists in the database
       if (moduleData.course) {
         const courseExists = await Course.findById(moduleData.course);
         if (!courseExists) {
@@ -93,14 +101,14 @@ export class ModuleService {
         }
       }
 
-     
+      // Ensure that all lecture IDs exist in the database
       if (moduleData.lectures && moduleData.lectures.length > 0) {
         const lecturesExist = await Lecture.find({
           _id: { $in: moduleData.lectures },
         });
 
         // If the number of existing lectures does not match the number of provided lectures,
-       
+        // throw an error indicating that some lecture IDs don't exist
         if (lecturesExist.length !== moduleData.lectures.length) {
           throw new Error('One or more provided lecture IDs do not exist');
         }
@@ -112,10 +120,10 @@ export class ModuleService {
       // Proceed to update the module with the filtered data (without _id)
       const updatedModule = await Module.findByIdAndUpdate(
         moduleId,
-        updateData, 
+        updateData, // the fields you want to update (without _id)
         {
-          new: true, 
-          runValidators: true, 
+          new: true, // Return the updated document
+          runValidators: true, // Ensure validators are run on update
         },
       );
 
@@ -125,7 +133,7 @@ export class ModuleService {
     }
   }
 
- 
+  // Delete a module
   async deleteModule(moduleId: string | Types.ObjectId) {
     try {
       if (!Types.ObjectId.isValid(moduleId)) {
@@ -145,3 +153,4 @@ export class ModuleService {
     }
   }
 }
+
