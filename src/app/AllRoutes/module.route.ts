@@ -4,6 +4,7 @@ import { ModuleController } from '../controllers/module.controller';
 const router = express.Router();
 
 router.post('/create', ModuleController.createModule);
+router.get('/',ModuleController.getAllModules);
 router.get('/course/:courseId', ModuleController.getModulesByCourse);
 router.get('/:moduleId', ModuleController.getModuleById);
 router.put('/:moduleId', ModuleController.updateModule);
