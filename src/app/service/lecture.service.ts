@@ -4,14 +4,14 @@ import { Course } from '../models/course.model';
 import AppError from '../errors/AppError';
 
 export class LectureService {
-  
+  // Create a new lecture with video number and duration
   async createLecture({
     title,
     description,
     videoLink,
     course,
     moduleId,
-    duration, 
+    duration, // duration in seconds
     videoNum,
   }: {
     title: string;
@@ -19,7 +19,7 @@ export class LectureService {
     videoLink: string;
     course: string;
     moduleId: string;
-    duration: number; 
+    duration: number; // Duration in seconds
     videoNum: number;
   }) {
     // Check if the course exists
@@ -34,7 +34,7 @@ export class LectureService {
       throw new AppError(404, 'Module not found');
     }
 
-   
+    // Ensure unique videoNum for each module
     const existingVideoNum = existingModule.lectures.some(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (lecture: any) => lecture.videoNum === videoNum,
@@ -47,27 +47,28 @@ export class LectureService {
     // Convert duration from seconds to minutes
     const durationInMinutes = (duration / 60).toFixed(2); // convert seconds to minutes
 
-   
+    // Create the new lecture
     const newLecture = new Lecture({
       title,
       description,
       videoLink,
       course,
       moduleId,
-      videoNum, 
-      duration: durationInMinutes, 
+      videoNum, // Add the video number
+      duration: durationInMinutes, // Store duration as minutes
     });
 
-  
+    // Save the lecture to the database
     await newLecture.save();
 
     // Add the lecture to the module
     existingModule.lectures.push(newLecture._id);
-    await existingModule.save(); /
+    await existingModule.save(); // Saving the module after adding the lecture
+
     return newLecture;
   }
 
-
+  // Calculate video number based on the existing lectures in the module
   async calculateVideoNum(moduleId: string): Promise<number> {
     const existingModule = await Module.findById(moduleId).populate('lectures');
     if (!existingModule) {
@@ -77,6 +78,7 @@ export class LectureService {
     return existingModule.lectures.length + 1; // New videoNum will be one more than the current count of lectures
   }
 
+  // Get all lectures for a specific module
   async getLecturesByModule(moduleId: string) {
     const lectures = await Lecture.find({ moduleId })
       .populate('course')
@@ -89,6 +91,7 @@ export class LectureService {
     return lectures;
   }
 
+  // Get a specific lecture by its ID
   async getLectureById(lectureId: string) {
     const lecture = await Lecture.findById(lectureId)
       .populate('course')
@@ -101,6 +104,7 @@ export class LectureService {
     return lecture;
   }
 
+  // Update a specific lecture
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateLecture(lectureId: string, updates: any) {
     const lecture = await Lecture.findById(lectureId);
@@ -116,7 +120,20 @@ export class LectureService {
     return lecture;
   }
 
+  async getAllLectures() {
+    const lectures = await Lecture.find()
+      .populate('moduleId')
+      .populate('course');
 
+    if (!lectures || lectures.length === 0) {
+      throw new Error('No lectures found');
+    }
+
+    return lectures;
+  }
+
+
+  // Delete a specific lecture
   async deleteLecture(lectureId: string) {
     const lecture = await Lecture.findById(lectureId);
 
@@ -129,3 +146,4 @@ export class LectureService {
     return lecture;
   }
 }
+
