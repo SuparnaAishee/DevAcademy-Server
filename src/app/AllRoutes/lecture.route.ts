@@ -4,8 +4,9 @@ import { LectureController } from '../controllers/lecture.controller';
 const router = express.Router();
 const lectureController = new LectureController();
 
-// Routes for managing lectures
+
 router.post('/create', lectureController.createLecture.bind(lectureController));
+router.get('/', LectureController.getAllLectures);
 router.get(
   '/module/:moduleId',
   lectureController.getLectures.bind(lectureController),
