@@ -3,14 +3,15 @@ import { LectureService } from '../service/lecture.service';
 import { createLectureSchema, updateLectureSchema } from '../validation/lecture.validation';
 import AppError from '../errors/AppError';
 import { ZodError } from 'zod';
+import { Lecture } from '../models/lecture.model';
 
 const lectureService = new LectureService();
 
 export class LectureController {
-
+  // Create a new lecture
   async createLecture(req: Request, res: Response, next: NextFunction) {
     try {
-      
+      // Zod validation for the request body
       const validatedData = createLectureSchema.parse(req.body);
 
       const {
@@ -31,32 +32,43 @@ export class LectureController {
         videoLink,
         course,
         moduleId,
-        videoNum, 
-        duration,
+        videoNum, // Pass videoNum to the service
+        duration, // Duration in HH:mm:ss format
       });
 
       res.status(201).json({
         status: 'success',
         data: { lecture },
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error instanceof ZodError) {
-       
+        // Handle validation error
         return next(
           new AppError(400, 'Validation Error', JSON.stringify(error.errors)),
         );
       }
 
+      // Handle other errors
       next(new AppError(500, 'Server Error', error.stack));
     }
   }
-
-
   async getLectures(req: Request, res: Response, next: NextFunction) {
     try {
       const { moduleId } = req.params;
-      const lectures = await lectureService.getLecturesByModule(moduleId);
+
+      const lectures = await Lecture.find({ moduleId })
+        .populate({
+          path: 'moduleId',
+          select: 'name courseId',
+          populate: {
+            path: 'courseId',
+            model: 'Course',
+            select: 'title',
+          },
+        })
+        .exec();
+
       res.status(200).json({
         status: 'success',
         data: { lectures },
@@ -66,6 +78,7 @@ export class LectureController {
     }
   }
 
+  // Get a single lecture by ID
   async getLectureById(req: Request, res: Response, next: NextFunction) {
     try {
       const { lectureId } = req.params;
@@ -82,10 +95,18 @@ export class LectureController {
     }
   }
 
-  
+  static async getAllLectures(req: Request, res: Response, next: NextFunction) {
+    try {
+      const lectures = await lectureService.getAllLectures();
+      res.status(200).json(lectures);
+    } catch (error) {
+      next(error);
+    }
+  }
+  // Update a lecture
   async updateLecture(req: Request, res: Response, next: NextFunction) {
     try {
- 
+      // Zod validation for the request body
       const validatedData = updateLectureSchema.parse(req.body);
 
       const { lectureId } = req.params;
@@ -99,7 +120,7 @@ export class LectureController {
       });
     } catch (error) {
       if (error instanceof ZodError) {
-      
+        // Handle validation error
         return next(
           new AppError(400, 'Validation Error', JSON.stringify(error.errors)),
         );
@@ -108,7 +129,7 @@ export class LectureController {
     }
   }
 
-  
+  // Delete a lecture
   async deleteLecture(req: Request, res: Response, next: NextFunction) {
     try {
       const { lectureId } = req.params;
